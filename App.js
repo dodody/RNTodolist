@@ -6,108 +6,136 @@
  * @flow strict-local
  */
 
-import React from 'react';
+import React, {useState} from 'react';
 import {
-  SafeAreaView,
   StyleSheet,
   ScrollView,
   View,
   Text,
   StatusBar,
+  TextInput,
+  Dimensions,
+  Platform,
 } from 'react-native';
 
-import {
-  Header,
-  LearnMoreLinks,
-  Colors,
-  DebugInstructions,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+// import AsyncStorage from '@react-native-community/async-storage';
 
-const App: () => React$Node = () => {
+import ToDo from './ToDo';
+
+const {width} = Dimensions.get('window');
+
+const App = () => {
+  const [newTodo, setNewTodo] = useState('');
+  const [todoData, setTodoData] = useState({});
+
+  const _addTodo = () => {
+    if (newTodo !== '') {
+      let id = Object.values(todoData).length;
+      let newTodoObject = {
+        [id]: {
+          id,
+          text: newTodo,
+          isCompleted: false,
+          createdAt: Date.now(),
+        },
+      };
+      setNewTodo('');
+      setTodoData({...todoData, ...newTodoObject});
+    }
+  };
+
+  const _deleteTodo = (id) => {
+    delete todoData[id];
+    setTodoData({...todoData});
+  };
+
+  const _checkCompleted = (id) => {
+    const completedStatus = !todoData[id].isCompleted;
+    todoData[id].isCompleted = completedStatus;
+    setTodoData({...todoData});
+  };
+
+  // if (!loadTodoData) {
+  //   return (
+  //     <View>
+  //       <Text>ss</Text>
+  //     </View>
+  //   );
+  // }
   return (
     <>
-      <StatusBar barStyle="dark-content" />
-      <SafeAreaView>
-        <ScrollView
-          contentInsetAdjustmentBehavior="automatic"
-          style={styles.scrollView}>
-          <Header />
-          {global.HermesInternal == null ? null : (
-            <View style={styles.engine}>
-              <Text style={styles.footer}>Engine: Hermes</Text>
-            </View>
-          )}
-          <View style={styles.body}>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Step One</Text>
-              <Text style={styles.sectionDescription}>
-                Edit <Text style={styles.highlight}>App.js</Text> to change this
-                screen and then come back to see your edits.
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>See Your Changes</Text>
-              <Text style={styles.sectionDescription}>
-                <ReloadInstructions />
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Debug</Text>
-              <Text style={styles.sectionDescription}>
-                <DebugInstructions />
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Learn More</Text>
-              <Text style={styles.sectionDescription}>
-                Read the docs to discover what to do next:
-              </Text>
-            </View>
-            <LearnMoreLinks />
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" />
+        <Text style={styles.title}>Dody To Do</Text>
+        <View style={styles.card}>
+          <TextInput
+            style={styles.input}
+            placeholder="new to do"
+            value={newTodo}
+            onChangeText={(text) => setNewTodo(text)}
+            returnKeyType={'done'}
+            autoCorrect={false}
+            onSubmitEditing={_addTodo}
+          />
+          <ScrollView contentContainerStyle={styles.toDos}>
+            {Object.values(todoData)
+              .reverse()
+              .map((val) => (
+                <ToDo
+                  key={val.id}
+                  {...val}
+                  _checkCompleted={_checkCompleted}
+                  _deleteTodo={_deleteTodo}
+                />
+              ))}
+          </ScrollView>
+        </View>
+      </View>
     </>
   );
 };
 
 const styles = StyleSheet.create({
-  scrollView: {
-    backgroundColor: Colors.lighter,
+  container: {
+    flex: 1,
+    backgroundColor: '#3959cc',
+    alignItems: 'center',
   },
-  engine: {
-    position: 'absolute',
-    right: 0,
+  title: {
+    color: 'white',
+    fontSize: 40,
+    marginTop: 80,
+    fontWeight: '100',
   },
-  body: {
-    backgroundColor: Colors.white,
+  card: {
+    marginTop: 40,
+    width: width - 40,
+    backgroundColor: 'white',
+    flex: 1,
+    ...Platform.select({
+      ios: {
+        shadowColor: 'rgb(50,50,50)',
+        shadowOpacity: 0.2,
+        shadowRadius: 5,
+        shadowOffset: {
+          height: -1,
+          width: 0,
+        },
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  input: {
+    padding: 20,
+    borderBottomColor: '#bbb',
+    borderBottomWidth: 1,
+    fontSize: 16,
+    height: 65,
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: Colors.black,
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-    color: Colors.dark,
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-  footer: {
-    color: Colors.dark,
-    fontSize: 12,
-    fontWeight: '600',
-    padding: 4,
-    paddingRight: 12,
-    textAlign: 'right',
+  todos: {
+    alignItems: 'center',
   },
 });
 
